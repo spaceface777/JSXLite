@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "es3",
+    "module": "commonjs",
+    "outDir": "lib/",
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "alwaysStrict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "removeComments": true
+  }
+}
