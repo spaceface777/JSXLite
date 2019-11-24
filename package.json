@@ -1,5 +1,5 @@
 {
-  "name": "onlyjsx",
+  "name": "jsxlite",
   "version": "1.0.0",
   "description": "Use JSX to create DOM elements without importing a huge library like React",
   "main": "lib/index.js",
@@ -13,7 +13,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/spaceface777/OnlyJSX.git"
+    "url": "git+https://github.com/spaceface777/JSXLite.git"
   },
   "keywords": [
     "JSX"
@@ -21,7 +21,7 @@
   "author": "spaceface777",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/spaceface777/OnlyJSX/issues"
+    "url": "https://github.com/spaceface777/JSXLite/issues"
   },
-  "homepage": "https://github.com/spaceface777/OnlyJSX#readme"
+  "homepage": "https://github.com/spaceface777/JSXLite#readme"
 }
