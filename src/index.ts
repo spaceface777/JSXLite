@@ -2,7 +2,6 @@ type Props = { [key: string]: string }
 type Children = (string | Element)[]
 
 // Actual processing function - converts JSX syntax to real DOM elements
-export default JSX
 export const JSX = {
   createElement (name: string, props: Props, ...children: Children): HTMLElement {
     const element = document.createElement(name)
@@ -23,6 +22,8 @@ export const JSX = {
     return element
   }
 }
+
+export default JSX
 
 // TypeScript definitions for the module
 declare global {
