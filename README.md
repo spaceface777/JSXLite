@@ -15,7 +15,6 @@ Use JSX to create DOM elements without importing a huge library like React
 2. Add the following to your `tsconfig.json`: 
     ```json
     "compilerOptions": {
-        (...)
         "jsx": "react",
         "reactNamespace": "JSX"
     }
