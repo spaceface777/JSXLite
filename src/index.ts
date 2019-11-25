@@ -8,7 +8,11 @@ export const JSX = {
     props = props || {}
 
     for (const prop in props) {
-      element.setAttribute(prop, props[prop])
+      switch (prop.toLowerCase()) {
+        case 'classname': element.setAttribute('class', props[prop]) // Allow React-like 'className' attribute
+        case 'innerhtml': element.innerHTML = props[prop] // Allow setting the element's inner HTML
+        default: element.setAttribute(prop, props[prop])
+      }
     }
 
     for (const child of children) {
