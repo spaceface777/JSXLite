@@ -81,6 +81,9 @@ export interface Props extends EventListeners {
   class?: string;
   className?: string;
   innerHTML?: string;
+  // TODO: Add more props here
+
+  // Allow any other prop not whitelisted here
   [prop: string]: any;
 }
 
