@@ -11,5 +11,7 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "declaration": true,
+    "jsx": "react",
+    "reactNamespace": "JSX"
   }
 }

@@ -1,64 +1,62 @@
+type OutputType = string
+
 type ElementName = 
   | string
-  | ((props: any) => HTMLElement) // Function components
+  | ((props: any, children: Children) => OutputType) // Function components
 
 interface PropsArg {
   [prop: string]: string | (() => any)
 }
 
-
-type Child = (string | HTMLElement)
+type Child = (string | OutputType)
 
 type Children = Child[] | Child[][]
 
+function sanitize (str: string) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
 
 export const JSX = {
   // Core function of the module - parses JSX into DOM elements
   // It's called automatically when transforming JSX - 
   // it is not meant to be called directly by the user
-  createElement (name: ElementName, props: PropsArg, ...children: Children): HTMLElement {
+  createElement (name: ElementName, props: PropsArg, ...children: Children): OutputType {
     props = props || {} // Prevent null from being passed
 
     // Allow for function components
-    if (typeof name === 'function') return name(props)
+    if (typeof name === 'function') return name(props, children)
 
-    const element = document.createElement(name)
+    let result = `<${name}`
 
     for (const prop of Object.keys(props)) {
       const val = props[prop]
+      result += ' ' // Padding space between props
 
       if (typeof val === 'string') {
         switch (prop.toLowerCase()) {
-          case 'classname': element.setAttribute('class', val) // Allow React-like 'className' attribute
-          case 'innerhtml': element.innerHTML = val // Allow setting the element's inner HTML
-          default: element.setAttribute(prop, val) // If not, simply pass the prop to the element
+          case 'classname': result += `class="${sanitize(val)}"`; break
+          case 'innerhtml': result += ''; break // element.innerHTML = val // Allow setting the element's inner HTML
+          default: result += `${prop}="${sanitize(val)}"` // element.setAttribute(prop, val) // If not, simply pass the prop to the element
         }
       } else {
-        const match = prop.match(/on(\w+)/)
-        const event = match?.[1]
-        if (event) {
-          element.addEventListener(event, val)
-        }
+        throw new TypeError('[JSXLite SSR] Cannot assign event listeners via HTML')
       }
     }
 
-    function createChild (child: Child) {
-      if (typeof child === 'string') {
-        element.appendChild(document.createTextNode(child))
-      } else {
-        element.appendChild(child)
-      }
-    }
+    result += '>'
 
     for (const child of children) {
       if (Array.isArray(child)) {
-        child.forEach(c => createChild(c)) // Allow property arrays
-      }
-
-      else createChild(child)
+        child.forEach(c => result += c) // Allow property arrays
+      } else result += child
     }
 
-    return element
+    result += `</${name}>`
+    return result
   }
 }
 
