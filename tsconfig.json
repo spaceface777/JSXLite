@@ -13,5 +13,6 @@
     "declaration": true,
     "jsx": "react",
     "reactNamespace": "JSX"
-  }
+  },
+  "exclude": ["**/*.test.*", "./lib/"]
 }

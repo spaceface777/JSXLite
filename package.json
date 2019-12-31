@@ -1,6 +1,6 @@
 {
   "name": "jsxlite-ssr",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Use JSX to create DOM elements without importing a huge library like React",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",

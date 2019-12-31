@@ -1,32 +1,19 @@
-# JSXLite
-Use JSX to create DOM elements without importing a huge library like React
-
- - VERY small footprint (<350 bytes minified + gzipped)
- - 0 dependencies
- - TypeScript support (typings included with library)
+# JSXLite SSR
+Use JSX to write HTML directly in your JS server
 
 ## Features
+Please read [the README for the regular JSXLite package](https://github.com/spaceface777/JSXLite#readme), as everything there is pretty much 100% applicable here :)
 
-**This library does not aim to be another React-like framework, and therefore many of React's core features have been completely left out. Instead, it aims to be a lightweight tool for those people (like me) who want to use JSX to create DOM elements, but don't want to install a huge, bloated library to do so. If you want a full web framework, this library is probably not meant for you.**
+## Differences from JSXLite
+The main difference is that this package is meant for use in **server side** rendering, not direct creation of HTML elements like the regular JSXLite. Therefore, this package has some notable limitations compared to JSXLite, namely that it cannot assign event listeners directly to the DOM because this module doesn't run in the client at all.
 
-
-#### Features included
-- Using JSX to create elements
-- Functional components
-    - Passing custom props to these components
-- HTML attributes, props...
-- A complete, well-tested TypeScript type definition
-
-#### Features not included
-- A virtual DOM implementation
-    - A component's internal state
-- Class components (useless if state isn't implemented)
-
+Instead, this package works more like a templating engine in the sense that it generates its own HTML.  
+Function components provide a very similar experience to that of using an engine like Mustache, Handlebars or the like. 
 
 ## Usage
 1. Install the library
     ```sh
-    npm install jsxlite
+    npm install jsxlite-ssr
     ```
 
 2. *(TypeScript)* Add the following to your `tsconfig.json`: 
@@ -38,47 +25,42 @@ Use JSX to create DOM elements without importing a huge library like React
     ```
 
 3. Import the library at the top of whichever `.jsx` or `.tsx` file you want to use it in:
-    ```ts
-    import JSX from "jsxlite"
+    ```tsx
+    import JSX from 'jsxlite-ssr'
     ```
 
 4. You can now use JSX!
     ```tsx
-    const b = <h1 class="title">JSX works now!</h1>
-
-    document.body.appendChild(<span id="example" onclick="alert('Hello')">Hi there</span>)
+    // Express route
+    app.get('/', function (req, res) {
+        res.send(<h1 class="title">Hello!</h1>)
+    })
     ```
 
-## Function components
-Function components are supported by the library, which means that you can create functional components and pass props to them like you would in React.
-
-***Note: The function name must start with an uppercase letter, as this is how a function component is differentiated from a regular HTML element.***
+## Complete Express example
 
 ```tsx
-interface ExampleProps {
+import express from 'express'
+import JSX from '.'
+
+const app = express()
+
+interface MainPageProps {
     name: string;
     version: string;
 }
 
-function Example (props: ExampleProps) {
-    const features = [
-        "lightweight",
-        "easy to use",
-        "simply amazing!"
-    ]
+const MainPage = (props: MainPageProps) => (
+    <div class="root">
+        <h1>Hello, { props.name }!</h1>
+        <p>This is an example page from <code>jsxlite-ssr v{props.version}</code>.</p>
+        <p>This HTML is being rendered into a string from JSX directly on the server.</p>
+    </div>
+)
 
-    return (
-        <div class="example">
-            <p>Hello there!</p>
-            <p>This is the {props.name} library, version v{props.version}</p>
-            <p>It has many great features:</p>
-            <ol>
-                {features.map(f => <li>{'It is ' + f}</li>)}
-            </ol>
-        </div>
-    )
-}
+app.get('/', function (req, res) {
+    res.send(<MainPage name="JSXLite User" version="2.0.1" />)
+})
 
-document.body.appendChild(<Example version="2.0.0" name="JSXLite"/>)
-
+app.listen(8080, () => console.log('Server started on port 8080'))
 ```
