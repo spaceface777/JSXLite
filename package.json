@@ -1,14 +1,14 @@
 {
-  "name": "jsxlite",
+  "name": "jsxlite-ssr",
   "version": "2.0.0",
   "description": "Use JSX to create DOM elements without importing a huge library like React",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha -r ts-node/register src/*.test.tsx",
     "build": "tsc",
     "watch": "tsc --watch",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm test && npm run build"
   },
   "dependencies": {},
   "devDependencies": {
@@ -21,15 +21,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/spaceface777/JSXLite.git"
+    "url": "git+https://github.com/spaceface777/JSXLite.git#SSR"
   },
   "keywords": [
-    "JSX"
+    "JSX",
+    "SSR"
   ],
   "author": "spaceface777",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/spaceface777/JSXLite/issues"
   },
-  "homepage": "https://github.com/spaceface777/JSXLite#readme"
+  "homepage": "https://github.com/spaceface777/JSXLite/tree/SSR#readme"
 }
