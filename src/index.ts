@@ -1,70 +1,95 @@
-type ElementName = 
+type ElementName =
   | string
-  | ((props: any) => HTMLElement) // Function components
+  | ((props: any) => Node) // Function components
 
 interface PropsArg {
-  [prop: string]: string | (() => any)
+  [prop: string]: any
 }
 
+type Child = string | number | boolean | null | undefined | Node
 
-type Child = (string | HTMLElement)
-
-type Children = Child[] | Child[][]
+type Children = Array<Child | Child[]>
 
 
-export const JSX = {
-  // Core function of the module - parses JSX into DOM elements
-  // It's called automatically when transforming JSX - 
-  // it is not meant to be called directly by the user
-  createElement (name: ElementName, props: PropsArg, ...children: Children): HTMLElement {
-    props = props || {} // Prevent null from being passed
+export const Fragment = Symbol('Fragment')
 
-    // Allow for function components
-    if (typeof name === 'function') return name(props)
+// Overloads so TypeScript infers the precise return type from the tag name
+function createElement<K extends keyof HTMLElementTagNameMap>(name: K, props: PropsArg, ...children: Children): HTMLElementTagNameMap[K]
+function createElement(name: typeof Fragment, props: PropsArg, ...children: Children): DocumentFragment
+function createElement(name: (props: any) => Node, props: PropsArg, ...children: Children): Node
+function createElement(name: string, props: PropsArg, ...children: Children): HTMLElement
+function createElement(name: ElementName | typeof Fragment, props: PropsArg, ...children: Children): Node {
+  props = props || {} // Prevent null from being passed
 
-    const element = document.createElement(name)
+  // Flatten children (handles nested arrays from mapped lists)
+  const flatChildren: Child[] = (children as any[]).flat(Infinity) as Child[]
 
-    for (const prop of Object.keys(props)) {
-      const val = props[prop]
+  // Fragment: return a DocumentFragment containing all children
+  if (name === Fragment) {
+    const frag = document.createDocumentFragment()
+    for (const child of flatChildren) createChild(frag, child)
+    return frag
+  }
 
-      if (typeof val === 'string') {
-        switch (prop.toLowerCase()) {
-          case 'classname': element.setAttribute('class', val) // Allow React-like 'className' attribute
-          case 'innerhtml': element.innerHTML = val // Allow setting the element's inner HTML
-          default: element.setAttribute(prop, val) // If not, simply pass the prop to the element
-        }
-      } else {
-        const match = prop.match(/on(\w+)/)
-        const event = match?.[1]
-        if (event) {
-          element.addEventListener(event, val)
-        }
-      }
+  // Allow for function components
+  if (typeof name === 'function') {
+    // Forward children via props.children (non-empty only)
+    if (flatChildren.length > 0) {
+      props = { ...props, children: flatChildren.length === 1 ? flatChildren[0] : flatChildren }
     }
+    return name(props)
+  }
 
-    function createChild (child: Child) {
-      if (typeof child === 'string') {
-        element.appendChild(document.createTextNode(child))
-      } else {
-        element.appendChild(child)
+  const element = document.createElement(name)
+
+  for (const prop of Object.keys(props)) {
+    const val = props[prop]
+
+    if (prop === 'className') {
+      // React-like className alias
+      element.setAttribute('class', String(val))
+    } else if (prop === 'innerHTML') {
+      element.innerHTML = String(val)
+    } else if (prop === 'style' && typeof val === 'object' && val !== null) {
+      // Support style as an object: { color: 'red', fontSize: '14px' }
+      Object.assign(element.style, val)
+    } else if (typeof val === 'boolean') {
+      // Boolean attributes: disabled={true} → set attribute, disabled={false} → remove
+      if (val) element.setAttribute(prop, '')
+      else element.removeAttribute(prop)
+    } else if (typeof val === 'function') {
+      // Event listeners: match both lowercase (onclick) and camelCase (onClick)
+      const match = prop.match(/^on([A-Za-z].*)$/)
+      if (match) {
+        element.addEventListener(match[1].toLowerCase(), val as EventListener)
       }
+    } else if (val !== null && val !== undefined) {
+      element.setAttribute(prop, String(val))
     }
+  }
 
-    for (const child of children) {
-      if (Array.isArray(child)) {
-        child.forEach(c => createChild(c)) // Allow property arrays
-      }
+  for (const child of flatChildren) createChild(element, child)
 
-      else createChild(child)
-    }
+  return element
+}
 
-    return element
+function createChild(parent: Element | DocumentFragment, child: Child): void {
+  if (child === null || child === undefined || child === false) {
+    // Render nothing for falsy non-zero values (React convention)
+    return
+  }
+  if (child instanceof Node) {
+    parent.appendChild(child)
+  } else {
+    parent.appendChild(document.createTextNode(String(child)))
   }
 }
 
+export const JSX = { createElement }
+
 export default JSX
 
-// Typescript types
+// TypeScript types
 declare global {
   namespace JSX {
     type Element = HTMLElement;
@@ -76,111 +101,14 @@ declare global {
   }
 }
 
-export interface Props extends EventListeners {
+export interface Props extends Partial<GlobalEventHandlers> {
   id?: string;
   class?: string;
   className?: string;
   innerHTML?: string;
-  // TODO: Add more props here
+  style?: string | Partial<CSSStyleDeclaration>;
 
   // Allow any other prop not whitelisted here
   [prop: string]: any;
 }
 
-// Event listeners
-export interface EventListeners {
-  oncopy?: (e: ClipboardEvent) => any
-  oncut?: (e: ClipboardEvent) => any
-  onpaste?: (e: ClipboardEvent) => any
-
-  oncompositionend?: (e: CompositionEvent) => any
-  oncompositionstart?: (e: CompositionEvent) => any
-  oncompositionupdate?: (e: CompositionEvent) => any
-
-  onfocus?: (e: FocusEvent) => any
-  onblur?: (e: FocusEvent) => any
-
-  onchange?: (e: Event) => any
-  onbeforeinput?: (e: Event) => any
-  oninput?: (e: Event) => any
-  onreset?: (e: Event) => any
-  onsubmit?: (e: Event) => any
-  oninvalid?: (e: Event) => any
-
-  onload?: (e: Event) => any
-  onerror?: (e: Event) => any // also a Media Event
-
-  onkeydown?: (e: KeyboardEvent) => any
-  onkeypress?: (e: KeyboardEvent) => any
-  onkeyup?: (e: KeyboardEvent) => any
-
-  onabort?: (e: Event) => any
-  oncanplay?: (e: Event) => any
-  oncanplaythrough?: (e: Event) => any
-  ondurationchange?: (e: Event) => any
-  onemptied?: (e: Event) => any
-  onencrypted?: (e: Event) => any
-  onended?: (e: Event) => any
-  onloadeddata?: (e: Event) => any
-  onloadedmetadata?: (e: Event) => any
-  onloadstart?: (e: Event) => any
-  onpause?: (e: Event) => any
-  onplay?: (e: Event) => any
-  onplaying?: (e: Event) => any
-  onprogress?: (e: Event) => any
-  onratechange?: (e: Event) => any
-  onseeked?: (e: Event) => any
-  onseeking?: (e: Event) => any
-  onstalled?: (e: Event) => any
-  onsuspend?: (e: Event) => any
-  ontimeupdate?: (e: Event) => any
-  onvolumechange?: (e: Event) => any
-  onwaiting?: (e: Event) => any
-
-  // MouseEvents
-  onauxclick?: (e: MouseEvent) => any
-  onclick?: (e: MouseEvent) => any
-  oncontextmenu?: (e: MouseEvent) => any
-  ondoubleclick?: (e: MouseEvent) => any
-  ondrag?: (e: DragEvent) => any
-  ondragend?: (e: DragEvent) => any
-  ondragenter?: (e: DragEvent) => any
-  ondragexit?: (e: DragEvent) => any
-  ondragleave?: (e: DragEvent) => any
-  ondragover?: (e: DragEvent) => any
-  ondragstart?: (e: DragEvent) => any
-  ondrop?: (e: DragEvent) => any
-  onmousedown?: (e: MouseEvent) => any
-  onmouseenter?: (e: MouseEvent) => any
-  onmouseleave?: (e: MouseEvent) => any
-  onmousemove?: (e: MouseEvent) => any
-  onmouseout?: (e: MouseEvent) => any
-  onmouseover?: (e: MouseEvent) => any
-  onmouseup?: (e: MouseEvent) => any
-
-  onselect?: (e: Event) => any
-
-  ontouchcancel?: (e: TouchEvent) => any
-  ontouchend?: (e: TouchEvent) => any
-  ontouchmove?: (e: TouchEvent) => any
-  ontouchstart?: (e: TouchEvent) => any
-
-  onpointerdown?: (e: PointerEvent) => any
-  onpointermove?: (e: PointerEvent) => any
-  onpointerup?: (e: PointerEvent) => any
-  onpointercancel?: (e: PointerEvent) => any
-  onpointerenter?: (e: PointerEvent) => any
-  onpointerleave?: (e: PointerEvent) => any
-  onpointerover?: (e: PointerEvent) => any
-  onpointerout?: (e: PointerEvent) => any
-
-  onscroll?: (e: UIEvent) => any
-
-  onwheel?: (e: WheelEvent) => any
-
-  onanimationstart?: (e: AnimationEvent) => any
-  onanimationend?: (e: AnimationEvent) => any
-  onanimationiteration?: (e: AnimationEvent) => any
-
-  ontransitionend?: (e: TransitionEvent) => any
-}

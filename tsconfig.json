@@ -1,7 +1,9 @@
 {
   "compilerOptions": {
-    "target": "es6",
+    "target": "ES2019",
     "module": "commonjs",
+    "lib": ["ES2019", "DOM"],
+    "rootDir": "src",
     "outDir": "lib/",
     "strict": true,
     "noImplicitAny": true,
