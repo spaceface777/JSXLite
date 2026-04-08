@@ -19,13 +19,13 @@ function createElement(name: typeof Fragment, props: PropsArg, ...children: Chil
 function createElement(name: (props: any) => Node, props: PropsArg, ...children: Children): Node
 function createElement(name: string, props: PropsArg, ...children: Children): HTMLElement
 function createElement(name: ElementName | typeof Fragment, props: PropsArg, ...children: Children): Node {
-  props = props || {} // Prevent null from being passed
+  props ??= {} // Prevent null from being passed
 
   // Flatten children (handles nested arrays from mapped lists)
   const flatChildren: Child[] = (children as any[]).flat(Infinity) as Child[]
 
   // Fragment: return a DocumentFragment containing all children
-  if (name === Fragment) {
+  if (name === Fragment || name === undefined) {
     const frag = document.createDocumentFragment()
     for (const child of flatChildren) createChild(frag, child)
     return frag
@@ -85,21 +85,34 @@ function createChild(parent: Element | DocumentFragment, child: Child): void {
   }
 }
 
-export const JSX = { createElement }
+export const JSX = { createElement, Fragment }
 
 export default JSX
 
 // TypeScript types
 declare global {
   namespace JSX {
-    type Element = HTMLElement;
-
+    type Element<T> = Node
+    type Fragment = typeof Fragment
     type IntrinsicElements = {
-      // HTMLElementTagNameMap = every HTML tag
-      [i in keyof HTMLElementTagNameMap]: Props;
-    };
+      [K in keyof HTMLElementTagNameMap]: ElementProps<HTMLElementTagNameMap[K]>
+    }
   }
 }
+
+// Detects readonly via the IfEquals trick: compares { readonly k } vs { k }
+type IfEquals<X, Y, A, B> =
+  (<T>() => T extends X ? 1 : 2) extends
+  (<T>() => T extends Y ? 1 : 2) ? A : B
+
+type WritableKeys<T> = {
+  [K in keyof T]-?: IfEquals<
+    { [Q in K]: T[K] },
+    { -readonly [Q in K]: T[K] },
+    K,
+    never
+  >
+}[keyof T]
 
 export interface Props extends Partial<GlobalEventHandlers> {
   id?: string;
@@ -107,8 +120,10 @@ export interface Props extends Partial<GlobalEventHandlers> {
   className?: string;
   innerHTML?: string;
   style?: string | Partial<CSSStyleDeclaration>;
-
-  // Allow any other prop not whitelisted here
-  [prop: string]: any;
 }
 
+// From a concrete element type, pick writable props
+type ElementProps<T extends HTMLElement> =
+& Props
+& { [K in WritableKeys<Omit<T, keyof Props>>]?: T[K] }
+// & { [prop: string]: any }
